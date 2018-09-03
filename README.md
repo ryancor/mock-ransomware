@@ -3,6 +3,10 @@
 2. Go to test folder, notice the permission changes, change them back to see the encrypted text
 3. Delete copied malware inside of `\\Users\\<name>\\ransomware` directory
 4. open up `regedit` to also delete persistent keys
+  - `reg DELETE HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v ransomware_pwn /f`
+  The operation completed successfully.
+  - `reg QUERY HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+    - to verify
 
 [Disclaimer]
 THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
