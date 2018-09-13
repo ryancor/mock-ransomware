@@ -1,7 +1,5 @@
 #include "kill_switch.h"
 
-void GetPrivsnDelete();
-
 vector<wstring> decrypt_files(wstring path)
 {
 	vector<wstring> subdirs, matches;
