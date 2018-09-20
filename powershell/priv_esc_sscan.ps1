@@ -56,3 +56,22 @@ echo "------------------"
 Get-ChildItem 'C:\Program Files', 'C:\Program Files (x86)' | ft Parent,Name,LastWriteTime
 Get-ChildItem -path Registry::HKEY_LOCAL_MACHINE\SOFTWARE | ft Name
 echo "`n"
+
+echo "Folder Permissions"
+echo "------------------"
+icacls "C:\Program Files\*" | findstr "Everyone"
+Get-ChildItem 'C:\Program Files\*','C:\Program Files (x86)\*' | % { try {
+  Get-Acl $_ -EA SilentlyContinue | Where {($_.Access|select -ExpandProperty IdentityReference) -match 'BUILTIN'}
+} catch{}}
+echo "`n"
+
+echo "Running Services: (File System Drivers)"
+echo "------------------"
+echo "Process"
+Get-Process | where {$_.ProcessName -notlike "svchost*"} | ft ProcessName, Id
+echo "Service"
+Get-Service
+Get-WmiObject -Query "Select * from Win32_Process" | where {
+  $_.Name -notlike "svchost*"} | Select Name, Handle, @{Label="Owner";Expression={
+    $_.GetOwner().User}} | ft -AutoSize
+echo "`n"
