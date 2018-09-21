@@ -1,4 +1,5 @@
-﻿  kill_switch.cpp
-kill_switch.cpp(34): warning C4018: '<': signed/unsigned mismatch
+﻿  anti_checks.cpp
+  ransomware.cpp
+  Generating Code...
   LINK : /LTCG specified but no code generation required; remove /LTCG from the link command line to improve linker performance
   ransomware.vcxproj -> C:\Users\ryancor\Desktop\Exercises\C-Programming\mock-ransomware\ransomware\Release\ransomware.exe

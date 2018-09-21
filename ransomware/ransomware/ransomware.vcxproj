@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="anti_checks.h" />
     <ClInclude Include="attack.h" />
     <ClInclude Include="kill_switch.h" />
     <ClInclude Include="misc.h" />
@@ -156,6 +157,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="anti_checks.cpp" />
     <ClCompile Include="attack.cpp" />
     <ClCompile Include="kill_switch.cpp" />
     <ClCompile Include="misc.cpp" />
