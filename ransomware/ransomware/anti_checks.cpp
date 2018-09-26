@@ -36,19 +36,19 @@ void Check::VirtualMachine()
 			push	edx
 
 			// perform fingerprint
-			mov		eax, 'VMXh' // VMware magic value (0x564D5868)
-			mov		ecx, 14h	// get memory size command (0x14)
-			mov		dx, 'VH'	// special VMware I/O port (0x5658)
+			mov     eax, 'VMXh' // VMware magic value (0x564D5868)
+			mov     ecx, 14h	// get memory size command (0x14)
+			mov     dx, 'VH'	// special VMware I/O port (0x5658)
 
-			in		eax, dx     // special I/O cmd
+			in      eax, dx     // special I/O cmd
 
-			mov		var, eax    // data
+			mov     var, eax    // data
 
 			// restore register values from the stack
-			pop		edx 
-			pop		ecx 
-			pop		ebx 
-			pop		eax
+			pop     edx
+			pop     ecx
+			pop     ebx
+			pop     eax
 		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {}
