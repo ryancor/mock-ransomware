@@ -236,5 +236,12 @@ int BytesFromResource(HMODULE hModule, char* Str)
 	outFile.write((char*)ResLock, nSizeOfRes);
 	outFile.close();
 
+	if (GetFileAttributes(Str) == -1)
+	{
+		// check for file being read-only
+		std::cout << "File has no attributes." << std::endl;
+		return 0;
+	}
+
 	return 1;
 }
