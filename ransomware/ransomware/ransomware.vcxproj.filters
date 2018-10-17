@@ -33,6 +33,9 @@
     <ClInclude Include="anti_checks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="gather.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -51,6 +54,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="anti_checks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gather.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
