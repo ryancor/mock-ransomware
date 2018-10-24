@@ -7,4 +7,5 @@ class Check {
 public:
 	void Debugger();
 	void VirtualMachine();
+	void Sandbox();
 };
