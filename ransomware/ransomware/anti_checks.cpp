@@ -120,7 +120,70 @@ void Check::Sandbox()
 		{
 			wprintf(L"[!] Physical Drive space too low... Sandbox Detected\n\n");
 			exit(-1);
+		} 
+		else {
+			char *macAddr = getMAC();
+			// check if macAddress is size of 00:03:FF
+			if (strlen(macAddr) <= 8)
+			{
+				// list of VM/sandbox company and products MAC identifiers
+				for (int i = 0; i < sizeof(listVmMacAddr) / sizeof(listVmMacAddr[0]); i++)
+				{
+					std::cout << "[!] Comparing " << macAddr << " to " << listVmMacAddr[i].c_str() << std::endl;
+					if (strncmp(macAddr, listVmMacAddr[i].c_str(), 8) == 0)
+					{
+						std::cout << "[!] MAC ID Found to be a VM or Sandbox: " << listVmMacAddr[i].c_str() << std::endl;
+						exit(-1);
+					}
+				}
+			}
+			else {
+				std::cout << "[+] MAC ID Checks out" << std::endl;
+			}
 		}
 		wprintf(L"\n\n");
 	}
+}
+
+char* Check::getMAC()
+{
+	PIP_ADAPTER_INFO AllAdapterInfo;
+	DWORD dwBufLen = sizeof(IP_ADAPTER_INFO);
+	char *macAddr = (char*)malloc(18);
+
+	AllAdapterInfo = (IP_ADAPTER_INFO *)malloc(sizeof(IP_ADAPTER_INFO));
+	if (AllAdapterInfo == NULL)
+	{
+		std::cout << "[-] GetAdapters Error: Unable to allocate to heap memory" << std::endl;
+		free(macAddr);
+		return NULL;
+	}
+
+	if (GetAdaptersInfo(AllAdapterInfo, &dwBufLen) == ERROR_BUFFER_OVERFLOW)
+	{
+		free(AllAdapterInfo);
+		AllAdapterInfo = (IP_ADAPTER_INFO *)malloc(dwBufLen);
+		if (AllAdapterInfo == NULL)
+		{
+			std::cout << "[-] GetAdapters Error: Unable to allocate to heap memory" << std::endl;
+			free(macAddr);
+			return NULL;
+		}
+	}
+
+	if (GetAdaptersInfo(AllAdapterInfo, &dwBufLen) == NO_ERROR)
+	{
+		PIP_ADAPTER_INFO pAllAdapterInfo = AllAdapterInfo;
+		do
+		{
+			sprintf(macAddr, "%02x:%02x:%02x:%02x:%02x:%02x", pAllAdapterInfo->Address[0], pAllAdapterInfo->Address[1],
+				pAllAdapterInfo->Address[2], pAllAdapterInfo->Address[3], pAllAdapterInfo->Address[4],
+				pAllAdapterInfo->Address[5]);
+			std::cout << "[+] Address: " << pAllAdapterInfo->IpAddressList.IpAddress.String <<
+				", MAC: " << macAddr << std::endl;
+			pAllAdapterInfo = pAllAdapterInfo->Next;
+		} while (pAllAdapterInfo);
+	}
+	free(AllAdapterInfo);
+	return macAddr;
 }
