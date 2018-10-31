@@ -1,16 +1,5 @@
-﻿  stdafx.cpp
-  anti_checks.cpp
-  attack.cpp
-attack.cpp(87): warning C4018: '<': signed/unsigned mismatch
-  dropper.cpp
-dropper.cpp(50): warning C4244: '=': conversion from 'std::streamoff' to 'int', possible loss of data
-dropper.cpp(131): warning C4244: '=': conversion from 'std::streamoff' to 'long', possible loss of data
-  gather.cpp
-  kill_switch.cpp
-kill_switch.cpp(34): warning C4018: '<': signed/unsigned mismatch
-  file_infector.cpp
+﻿  anti_checks.cpp
   ransomware.cpp
   Generating Code...
-c:\users\ryancor\desktop\exercises\c-programming\mock-ransomware\ransomware\ransomware\gather.cpp(67): warning C4172: returning address of local variable or temporary: szMsg
   LINK : /LTCG specified but no code generation required; remove /LTCG from the link command line to improve linker performance
   ransomware.vcxproj -> C:\Users\ryancor\Desktop\Exercises\C-Programming\mock-ransomware\ransomware\Release\ransomware.exe
