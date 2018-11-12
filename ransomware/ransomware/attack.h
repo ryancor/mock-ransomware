@@ -34,7 +34,7 @@ public:
 	vector<wstring> list_n_kill_files(wstring path);
 	void LoadDriverBeep();
 	BOOL APCinjection(string target, TCHAR *dll_name);
-	BOOL ProcReplace(char *arg1, string arg2);
+	BOOL ProcReplace(string arg1);
 };
 
 typedef NTSTATUS(WINAPI* _NtQueryInformationProcess)(
