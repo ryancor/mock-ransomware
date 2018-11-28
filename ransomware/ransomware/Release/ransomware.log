@@ -1,5 +1,4 @@
 ﻿  attack.cpp
-attack.cpp(282): warning C4244: 'initializing': conversion from 'std::streamoff' to 'unsigned int', possible loss of data
-attack.cpp(330): warning C4477: 'printf' : format string '%2x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'std::shared_ptr<char>'
-  LINK : /LTCG specified but no code generation required; remove /LTCG from the link command line to improve linker performance
+attack.cpp(340): warning C4244: 'initializing': conversion from 'std::streamoff' to 'unsigned int', possible loss of data
+attack.cpp(388): warning C4477: 'printf' : format string '%2x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'std::shared_ptr<char>'
   ransomware.vcxproj -> C:\Users\ryancor\Desktop\Exercises\C-Programming\mock-ransomware\ransomware\Release\ransomware.exe
