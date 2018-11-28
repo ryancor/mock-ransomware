@@ -11,3 +11,6 @@ dll/mal_dll/Release/mal_dll.iobj
 dll/mal_dll/Release/mal_dll.ipdb
 dll/mal_dll/mal_dll.sln
 dll/mal_dll/.vs/*
+dll/mal_dll/Release/mal_dll.exp
+dll/mal_dll/Release/mal_dll.lib
+ransomware/ransomware/ransomware.vcxproj.user
