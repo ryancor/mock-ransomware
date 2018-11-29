@@ -1,4 +1,4 @@
-﻿  attack.cpp
-attack.cpp(340): warning C4244: 'initializing': conversion from 'std::streamoff' to 'unsigned int', possible loss of data
-attack.cpp(388): warning C4477: 'printf' : format string '%2x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'std::shared_ptr<char>'
+﻿  dropper.cpp
+dropper.cpp(72): warning C4244: '=': conversion from 'std::streamoff' to 'int', possible loss of data
+dropper.cpp(153): warning C4244: '=': conversion from 'std::streamoff' to 'long', possible loss of data
   ransomware.vcxproj -> C:\Users\ryancor\Desktop\Exercises\C-Programming\mock-ransomware\ransomware\Release\ransomware.exe
