@@ -1,4 +1,1 @@
-﻿  dropper.cpp
-dropper.cpp(72): warning C4244: '=': conversion from 'std::streamoff' to 'int', possible loss of data
-dropper.cpp(153): warning C4244: '=': conversion from 'std::streamoff' to 'long', possible loss of data
-  ransomware.vcxproj -> C:\Users\ryancor\Desktop\Exercises\C-Programming\mock-ransomware\ransomware\Release\ransomware.exe
+﻿  ransomware.vcxproj -> C:\Users\ryancor\Desktop\Exercises\C-Programming\mock-ransomware\ransomware\Release\ransomware.exe
