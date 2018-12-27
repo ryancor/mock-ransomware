@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="anti_checks.h" />
     <ClInclude Include="attack.h" />
+    <ClInclude Include="cipher.h" />
     <ClInclude Include="dropper.h" />
     <ClInclude Include="gather.h" />
     <ClInclude Include="kill_switch.h" />
@@ -163,6 +164,7 @@
   <ItemGroup>
     <ClCompile Include="anti_checks.cpp" />
     <ClCompile Include="attack.cpp" />
+    <ClCompile Include="cipher.cpp" />
     <ClCompile Include="dropper.cpp" />
     <ClCompile Include="gather.cpp" />
     <ClCompile Include="kill_switch.cpp" />
